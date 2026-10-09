@@ -182,7 +182,7 @@ fn is_kpi_host(url: &str) -> bool {
         .next()
         .unwrap_or("")
         .split('@')
-        .last()
+        .next_back()
         .unwrap_or("")
         .split(':')
         .next()
