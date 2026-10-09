@@ -27,7 +27,8 @@ fn erro(e: impl std::fmt::Display) -> JsValue {
 /// JS object → `Settings`, going through JSON so Maps/objects/undefined all
 /// behave the way `JSON.stringify` would.
 fn ler(settings: &JsValue) -> Result<Settings, JsValue> {
-    let json = js_sys::JSON::stringify(settings).map_err(|_| JsValue::from_str("settings must be a JSON-serialisable object"))?;
+    let json = js_sys::JSON::stringify(settings)
+        .map_err(|_| JsValue::from_str("settings must be a JSON-serialisable object"))?;
     let json: String = json.into();
     if json == "undefined" || json == "null" {
         return Err(JsValue::from_str("settings is missing"));
@@ -37,7 +38,8 @@ fn ler(settings: &JsValue) -> Result<Settings, JsValue> {
 
 /// `Serialize` → plain JS object (objects, not Maps; no `undefined` keys).
 fn escrever<T: Serialize>(v: &T) -> Result<JsValue, JsValue> {
-    v.serialize(&serde_wasm_bindgen::Serializer::json_compatible()).map_err(erro)
+    v.serialize(&serde_wasm_bindgen::Serializer::json_compatible())
+        .map_err(erro)
 }
 
 /// Encode a settings object as the string a configuration QR code must
@@ -88,8 +90,13 @@ pub struct Rendered {
 pub fn render(settings: JsValue, quiet_zone: Option<u32>) -> Result<JsValue, JsValue> {
     console_error_panic_hook::set_once();
     let s = ler(&settings)?;
-    let code = s.qr_code(collect_settings::EcLevel::M).map_err(|e| erro(format!("settings too large for a QR code: {e}")))?;
-    let opt = collect_settings::QrOptions { quiet_zone: quiet_zone.unwrap_or(4).min(16), ..Default::default() };
+    let code = s
+        .qr_code(collect_settings::EcLevel::M)
+        .map_err(|e| erro(format!("settings too large for a QR code: {e}")))?;
+    let opt = collect_settings::QrOptions {
+        quiet_zone: quiet_zone.unwrap_or(4).min(16),
+        ..Default::default()
+    };
     let r = Rendered {
         payload: s.encode().map_err(erro)?,
         svg: collect_settings::render_svg(&code, opt),
@@ -119,7 +126,11 @@ pub fn open_admin(admin_pw: &str) -> Result<JsValue, JsValue> {
 /// 15 minutes, downloads updates on its own, sends finalized forms over any
 /// connection and keeps the local copy after sending.
 #[wasm_bindgen(js_name = autoSyncGeneral)]
-pub fn auto_sync_general(server_url: &str, username: &str, password: &str) -> Result<JsValue, JsValue> {
+pub fn auto_sync_general(
+    server_url: &str,
+    username: &str,
+    password: &str,
+) -> Result<JsValue, JsValue> {
     escrever(&General::auto_sync(server_url, username, password))
 }
 
