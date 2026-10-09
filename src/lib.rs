@@ -121,7 +121,7 @@ impl Settings {
             Some(u) if !u.starts_with("https://") => {
                 w.push(format!("server_url `{u}` is not https: Collect refuses Basic auth over plain http"))
             }
-            Some(u) if u.contains("kf.") || u.contains("eu.kobotoolbox.org") => w.push(format!(
+            Some(u) if is_kpi_host(u) => w.push(format!(
                 "server_url `{u}` looks like the KoboToolbox web interface (KPI); the app must point at the KoboCAT host (kc.… / kc-eu.…)"
             )),
             _ => {}
@@ -172,9 +172,40 @@ impl Settings {
     }
 }
 
+/// The KoboToolbox *web* hosts (`kf.`, `eu.kobotoolbox.org`), which Collect
+/// cannot talk to. The KoboCAT hosts (`kc.`, `kc-eu.`) are the right ones.
+fn is_kpi_host(url: &str) -> bool {
+    let host = url
+        .trim_start_matches("https://")
+        .trim_start_matches("http://")
+        .split(['/', '?', '#'])
+        .next()
+        .unwrap_or("")
+        .split('@')
+        .last()
+        .unwrap_or("")
+        .split(':')
+        .next()
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    host.starts_with("kf.") || host == "eu.kobotoolbox.org"
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn kpi_host_detection() {
+        assert!(is_kpi_host("https://kf.kobotoolbox.org"));
+        assert!(is_kpi_host("https://eu.kobotoolbox.org/"));
+        assert!(is_kpi_host("https://kf.prompt.tec.br"));
+        assert!(!is_kpi_host("https://kc-eu.kobotoolbox.org"));
+        assert!(!is_kpi_host("https://kc.kobotoolbox.org/owner"));
+        assert!(!is_kpi_host(
+            "https://central.example.org/v1/key/abc/projects/1"
+        ));
+    }
 
     #[test]
     fn roundtrip() {
