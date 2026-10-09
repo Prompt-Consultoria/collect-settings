@@ -1,0 +1,25 @@
+[package]
+name = "collect-settings"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT"
+description = "Build, encode and decode ODK Collect / KoboCollect configuration QR codes (settings JSON → zlib → base64 → QR)."
+repository = "https://github.com/Prompt-Consultoria/collect-settings"
+homepage = "https://github.com/Prompt-Consultoria/collect-settings"
+documentation = "https://docs.rs/collect-settings"
+readme = "README.md"
+keywords = ["odk", "kobotoolbox", "qrcode", "collect", "survey"]
+categories = ["encoding", "config"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+base64 = "0.22"
+thiserror = "2"
+qrcode = { version = "0.14", default-features = false, optional = true }
+
+[features]
+default = ["qr"]
+qr = ["dep:qrcode"]
