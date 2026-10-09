@@ -11,6 +11,18 @@ documentation = "https://docs.rs/collect-settings"
 readme = "README.md"
 keywords = ["odk", "kobotoolbox", "qrcode", "collect", "survey"]
 categories = ["encoding", "config"]
+# The wasm/npm binding lives in bindings/js; the crates.io package excludes it.
+exclude = ["bindings/", ".github/"]
+
+# Plain `cargo build`/`test` at the root touches only the core crate; the
+# wasm member is built by bindings/js/build.sh.
+[workspace]
+members = [".", "bindings/js"]
+default-members = ["."]
+
+[profile.release]
+lto = true
+codegen-units = 1
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }

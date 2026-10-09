@@ -47,6 +47,24 @@ Point `server_url` at the **KoboCAT** host (`https://kc.kobotoolbox.org`,
 `https://kc-eu.kobotoolbox.org`, or `https://kc.your-server`), not at the
 `kf.`/`eu.` web interface. `Settings::warnings()` flags that mistake.
 
+## JavaScript / WebAssembly
+
+The same code ships on npm as [`collect-settings`](https://www.npmjs.com/package/collect-settings)
+(built from `bindings/js` with wasm-pack), for browsers and Node:
+
+```js
+import init, { render, lockedInterviewerAdmin, autoSyncGeneral } from 'collect-settings';
+await init();
+const { svg, payload } = render({
+  general: autoSyncGeneral('https://kc.kobotoolbox.org', 'interviewer01', 'secret'),
+  admin: lockedInterviewerAdmin('admin-pw'),
+  project: { name: 'Household survey', icon: 'H', color: '#6b63e6' },
+});
+```
+
+See `bindings/js/README.md` for the full JS API. A ready-made web app built on
+it lives at [Prompt-Consultoria/collect-settings-app](https://github.com/Prompt-Consultoria/collect-settings-app).
+
 ## Features
 
 * `qr` (default) — `Settings::qr_svg` and `Settings::qr_code` via the

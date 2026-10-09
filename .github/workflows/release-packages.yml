@@ -1,0 +1,93 @@
+name: release-packages
+
+# Publishes the two registry packages when a release tag (v*) is pushed:
+#   - crates.io  (collect-settings)       via crates.io Trusted Publishing (OIDC)
+#   - npm        (collect-settings, wasm) via npm Trusted Publishing (OIDC)
+# No long-lived tokens: each registry mints a short-lived credential from the
+# GitHub OIDC id-token. One-time setup on each registry: add a "Trusted
+# publisher" pointing at this repo + this workflow file + the `release`
+# environment (crates.io: crate settings; npm: package settings).
+#
+# workflow_dispatch runs everything except the uploads (dry runs).
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  versions:
+    name: check versions
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tag matches both package versions
+        run: |
+          core=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)
+          js=$(grep -m1 '^version' bindings/js/Cargo.toml | cut -d'"' -f2)
+          echo "core=$core js=$js ref=$GITHUB_REF_NAME"
+          [ "$core" = "$js" ] || { echo "::error::package versions diverge"; exit 1; }
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            [ "v$core" = "$GITHUB_REF_NAME" ] || { echo "::error::tag $GITHUB_REF_NAME != v$core"; exit 1; }
+          fi
+
+  crate:
+    name: publish crates.io
+    needs: versions
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Dry run (workflow_dispatch)
+        if: github.event_name != 'push'
+        run: cargo publish --dry-run
+      - name: Mint crates.io token
+        if: github.event_name == 'push' && github.ref_type == 'tag'
+        id: auth
+        uses: rust-lang/crates-io-auth-action@v1
+      - name: Publish
+        if: github.event_name == 'push' && github.ref_type == 'tag'
+        run: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+
+  npm:
+    name: publish npm (wasm)
+    needs: versions
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - name: npm >= 11.5.1 (required for OIDC publishing)
+        run: npm install -g npm@latest && npm --version
+      - name: Install wasm-pack
+        run: curl -sSf https://rustwasm.github.io/wasm-pack/installer/init.sh | sh
+      - run: ./bindings/js/build.sh
+      - run: node bindings/js/test.mjs
+      - name: Publish (dry run on workflow_dispatch)
+        working-directory: bindings/js/pkg
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "push" ] && [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            npm publish --access public
+          else
+            npm publish --access public --dry-run
+          fi
