@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2 — 2026-10-09
+
+- Version bump only: the npm version 0.1.1 was consumed by an interrupted
+  staged publish and cannot be reused.
+
 ## 0.1.1 — 2026-10-09
 
 - Fix: the "looks like the KoboToolbox web interface" warning fired for the
