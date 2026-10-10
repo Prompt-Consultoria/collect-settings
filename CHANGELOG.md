@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.3 — 2026-10-10
+
+- CI: release workflow renamed to `release.yml` to match the Trusted Publishing
+  configuration on crates.io and npm; no library changes.
+
 ## 0.1.2 — 2026-10-09
 
 - Version bump only: the npm version 0.1.1 was consumed by an interrupted
