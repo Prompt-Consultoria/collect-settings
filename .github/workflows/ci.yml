@@ -38,4 +38,5 @@ jobs:
       - run: cargo clippy -p collect-settings-wasm --target wasm32-unknown-unknown -- -D warnings
       - run: ./bindings/js/build.sh
       - run: node bindings/js/test.mjs
-      - run: cd bindings/js/pkg && npm publish --access public --dry-run
+      - name: Validate npm tarball (no registry check)
+        run: cd bindings/js/pkg && npm pack --dry-run

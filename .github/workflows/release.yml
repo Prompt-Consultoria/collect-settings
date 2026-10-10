@@ -89,5 +89,7 @@ jobs:
           if [ "${GITHUB_EVENT_NAME}" = "push" ] && [ "${GITHUB_REF_TYPE}" = "tag" ]; then
             npm publish --access public
           else
-            npm publish --access public --dry-run
+            # publish --dry-run is rejected when the version already exists;
+            # pack --dry-run validates the tarball without hitting the registry.
+            npm pack --dry-run
           fi
